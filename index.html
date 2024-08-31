@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirement Classification and Code Generation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* History Section */
+        .history {
+            width: 280px;
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            padding-top: 30px;
+            overflow-y: auto;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            box-sizing: border-box;
+        }
+
+        .history h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 20px;
+        }
+
+        .history-entry {
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            background-color: #34495e;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            transition: background-color 0.3s ease;
+        }
+
+        .history-entry span {
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .history-entry:hover {
+            background-color: #1abc9c;
+        }
+
+        .container {
+            margin-left: 320px; /* Adjusted for the history sidebar */
+            margin-right: 50px;
+            margin-top: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            overflow-y: auto;
+            height: 90vh;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            resize: none;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        #classify-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #reset-button {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .classification-result {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+
+        .functional {
+            background-color: #4CAF50;
+        }
+
+        .non-functional {
+            background-color: #ff9800;
+        }
+
+        .code-section {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f0f0f0;
+            border-left: 5px solid #333;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .evaluation-section {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Spinners */
+        .spinner {
+            border: 8px solid #f3f3f3; /* Light grey */
+            border-top: 8px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        #loading-classify {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        #loading-evaluate {
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- History Section -->
+    <div class="history" id="history">
+        <h3>Cached History</h3>
+        <!-- History entries will be added here -->
+    </div>
+
+    <div class="container">
+        <h1>Requirement Classification and Code Generation</h1>
+        <textarea id="requirement" placeholder="Enter your requirement here..."></textarea>
+        <div class="buttons">
+            <button id="classify-button" onclick="classifyAndGenerate()">Classify Requirement and Generate Code</button>
+            <button id="reset-button" onclick="resetPage()">Reset</button>
+        </div>
+        <div id="loading-classify" class="spinner"></div>
+        <div id="classification" class="classification-result"></div>
+        <div id="code" class="code-section"></div>
+
+        <div class="buttons">
+            <button id="evaluate-button" onclick="evaluateCode()" style="display:none;">Evaluate Code</button>
+            <div id="loading-evaluate" class="spinner"></div>
+        </div>
+
+        <div id="evaluation" class="evaluation-section"></div>
+    </div>
+
+    <script>
+        let history = [];
+
+        function classifyAndGenerate() {
+            const requirement = document.getElementById('requirement').value;
+            document.getElementById('loading-classify').style.display = 'block';
+            document.getElementById('classify-button').disabled = true;
+            document.getElementById('classify-button').textContent = 'Classifying and Generating...';
+
+            fetch('/classify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ requirement }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const classificationDiv = document.getElementById('classification');
+                classificationDiv.textContent = `Classification: ${data.classification}`;
+                classificationDiv.classList.remove('functional', 'non-functional');
+
+                if (data.classification === 'Functional Requirement') {
+                    classificationDiv.classList.add('functional');
+                } else {
+                    classificationDiv.classList.add('non-functional');
+                }
+
+                // Now generate the code
+                return fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ requirement }),
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('code').textContent = data.code;
+                document.getElementById('loading-classify').style.display = 'none';
+                document.getElementById('evaluate-button').style.display = 'block';
+                document.getElementById('classify-button').disabled = false;
+                document.getElementById('classify-button').textContent = 'Classify Requirement and Generate Code';
+
+                // Save the history entry
+                saveHistory(requirement, data.classification, data.code);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading-classify').style.display = 'none';
+                document.getElementById('classify-button').disabled = false;
+                document.getElementById('classify-button').textContent = 'Classify Requirement and Generate Code';
+            });
+        }
+
+        function saveHistory(requirement, classification, code, evaluation = null) {
+            const shortTitle = generateShortTitle(requirement);
+            const historyEntry = {
+                requirement,
+                classification,
+                generatedCode: code,
+                evaluation,
+                title: shortTitle
+            };
+
+            // Add the new entry to the top of the history
+            history.unshift(historyEntry);
+            updateHistoryUI();
+        }
+
+        function generateShortTitle(requirement) {
+            // Split the requirement into words
+            const words = requirement.split(' ');
+
+            // Construct a short title from the first few words
+            return words.slice(0, 5).join(' ') + '...';
+        }
+
+        function updateHistoryUI() {
+            const historyDiv = document.getElementById('history');
+            historyDiv.innerHTML = '<h3>Cached History</h3>'; // Reset the history list
+
+            history.forEach((entry, index) => {
+                const entryDiv = document.createElement('div');
+                entryDiv.className = 'history-entry';
+                entryDiv.textContent = entry.title; // Use the generated short title
+                entryDiv.title = entry.requirement; // Tooltip for full text
+                entryDiv.onclick = () => displayHistoryEntry(index);
+                historyDiv.appendChild(entryDiv);
+            });
+
+            // Highlight the first entry as active
+            if (history.length > 0) {
+                document.querySelector('.history-entry').classList.add('active');
+            }
+        }
+
+        function displayHistoryEntry(index) {
+            const selectedEntry = history[index];
+            document.getElementById('requirement').value = selectedEntry.requirement;
+            document.getElementById('classification').textContent = `Classification: ${selectedEntry.classification}`;
+            document.getElementById('code').textContent = selectedEntry.generatedCode;
+
+            if (selectedEntry.evaluation) {
+                document.getElementById('evaluation').innerHTML = `
+                    <h3>AI Feedback:</h3>
+                    <p>${selectedEntry.evaluation.ai_feedback}</p>
+                    <h3>Unit Test Feedback:</h3>
+                    <pre>${selectedEntry.evaluation.unit_test_feedback}</pre>
+                    <h3>Pylint Feedback:</h3>
+                    <pre>${selectedEntry.evaluation.pylint_feedback}</pre>
+                    <h3>Security Feedback:</h3>
+                    <pre>${selectedEntry.evaluation.security_feedback}</pre>
+                `;
+                document.getElementById('evaluate-button').style.display = 'none';
+            } else {
+                document.getElementById('evaluation').innerHTML = '';
+                document.getElementById('evaluate-button').style.display = 'block';
+            }
+
+            // Highlight the selected entry
+            document.querySelectorAll('.history-entry').forEach((entry, i) => {
+                entry.classList.toggle('active', i === index);
+            });
+        }
+
+        function evaluateCode() {
+            const code = document.getElementById('code').textContent;
+            document.getElementById('evaluation').textContent = 'Evaluating...';
+            document.getElementById('evaluate-button').disabled = true;
+
+            document.getElementById('loading-evaluate').style.display = 'block';
+
+            fetch('/evaluate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ code }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('evaluation').innerHTML = `
+                    <h3>AI Feedback:</h3>
+                    <p>${data.evaluation.ai_feedback}</p>
+                    <h3>Unit Test Feedback:</h3>
+                    <pre>${data.evaluation.unit_test_feedback}</pre>
+                    <h3>Pylint Feedback:</h3>
+                    <pre>${data.evaluation.pylint_feedback}</pre>
+                    <h3>Security Feedback:</h3>
+                    <pre>${data.evaluation.security_feedback}</pre>
+                `;
+                document.getElementById('evaluate-button').disabled = false;
+                document.getElementById('loading-evaluate').style.display = 'none';
+
+                // Update the cached entry with evaluation results
+                const requirement = document.getElementById('requirement').value;
+                const historyEntry = history.find(entry => entry.requirement === requirement);
+                if (historyEntry) {
+                    historyEntry.evaluation = data.evaluation;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('evaluation').textContent = 'Evaluation failed.';
+                document.getElementById('evaluate-button').disabled = false;
+                document.getElementById('loading-evaluate').style.display = 'none';
+            });
+        }
+
+        function resetPage() {
+            document.getElementById('requirement').value = '';
+            document.getElementById('classification').textContent = '';
+            document.getElementById('code').textContent = '';
+            document.getElementById('evaluation').textContent = '';
+            document.getElementById('evaluate-button').style.display = 'none';
+            document.getElementById('loading-classify').style.display = 'none';
+            document.getElementById('loading-evaluate').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
