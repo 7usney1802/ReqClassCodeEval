@@ -1,4 +1,4 @@
-# ReqClassCodeEval
+# CodeT5 Requirements → Code Generator & Code Quality Evaluator
 Code Generation and Assessment with CodeT5
 This project is a Flask web application that generates Python code based on natural language requirements using the CodeT5 model. It also includes a code assessment feature that evaluates the quality of the generated code.
 This project integrates the CodeT5 model to automatically generate Python code from user-provided natural language requirements. The generated code is then evaluated based on predefined metrics to ensure quality. This application is intended to streamline the process of code generation, especially for scenarios where quick prototyping or automation is necessary.
@@ -9,6 +9,54 @@ Cross-Origin Resource Sharing (CORS): Enabled to allow cross-origin requests, ma
 Installation
 Python 3.8 or later
 Anaconda (recommended for managing dependencies and environments)
+✨ Features
+🧠 1. Requirement-to-Code Generation (CodeT5)
+
+Automatically generates Python code from human-written requirements, enabling:
+
+Rapid prototyping
+
+Code automation
+
+Teaching & learning scenarios
+
+NLP → Code workflows
+
+🛡️ 2. Code Quality Assessment
+
+After generating the code, the system evaluates it for:
+
+Correctness
+
+Readability
+
+Efficiency
+
+Maintainability
+
+Potential bugs
+
+Security issues (optional)
+
+🌐 3. REST API
+
+The backend exposes a clean, production-style API:
+
+POST /generate
+
+POST /assess
+
+Perfect for integrating with:
+
+React frontends
+
+Internal tools
+
+Automation pipelines
+
+🔄 4. CORS Enabled
+
+Fully supports cross-origin requests (e.g., React, Vue, or Flutter front-end apps).
 Setting Up the Environment
 Clone the repository:
 
